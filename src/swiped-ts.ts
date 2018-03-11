@@ -1,7 +1,35 @@
-import {CSSPrefix} from 'cssprefix';
+import CSSPrefix from 'cssprefix/src/cssprefix'
 
-export default class Swiped {
-    options: any;
+let _elems = [];
+let eventBinded = false;
+let groupCounter = 0;
+let elemId = 0;
+
+const msPointer = window.navigator.msPointerEnabled;
+
+const touch = {
+    start: msPointer ? 'MSPointerDown' : 'touchstart',
+    move: msPointer ? 'MSPointerMove' : 'touchmove',
+    end: msPointer ? 'MSPointerUp' : 'touchend'
+};
+
+const mouse = {
+    start: 'mousedown',
+    move: 'mousemove',
+    end: 'mouseup'
+};
+
+/**
+ * swipe.x - initial coordinate Х
+ * swipe.y - initial coordinate Y
+ * swipe.delta - distance
+ * swipe.startSwipe - swipe is starting
+ * swipe.startScroll - scroll is starting
+ * swipe.startTime - necessary for the short swipe
+ * swipe.touchId - ID of the first touch
+ */
+
+class SwipedItem {
     duration: any;
     tolerance: any;
     time: any;
@@ -13,56 +41,18 @@ export default class Swiped {
     id: any;
     right: any;
     left: any;
-    elemId: number;
-    groupCounter: number;
-    _elems: any;
     cssProps: any;
-    touch: any;
-    mouse: any;
     transitionEvent: any;
-    eventBinded = false;
     delta: any;
     touchId: any;
     x: any;
     y: any;
     startTime: any;
-
-    onOpen(){};
-    onClose(){};
-
-    init(o): any[] {
-        this.groupCounter++;
-
-        let elems = [];
-
-        if (o.elems.length) {
-            elems = o.elems;
-        } else {
-            elems = document.querySelectorAll(o.query)
-        }
-
-        let group = [];
-
-        delete o.c;
-
-        [].forEach.call(elems, function (elem) {
-            let option = this.extend({ elem: elem, group: this.groupCounter }, o);
-
-            group.push(new Swiped(option));
-        });
-
-        this._bindEvents();
-        this._elems = this._elems.concat(group);
-
-        if (group.length === 1) {
-            return group[0];
-        }
-
-        return group;
-    };
+    swiped: any;
+    startSwipe: any;
+    startScroll: any;
 
     constructor(options: any) {
-        this._elems = [];
 
         let defaultOptions = {
             duration: 200,
@@ -73,7 +63,7 @@ export default class Swiped {
             left: 0
         };
 
-        this.options = this.extend(defaultOptions, options || {});
+        options = {...defaultOptions, ...options};
         this.duration = options.duration;
         this.tolerance = options.tolerance;
         this.time = options.time;
@@ -82,7 +72,7 @@ export default class Swiped {
         this.list = options.list;
         this.dir = options.dir;
         this.group = options.group;
-        this.id = this.elemId++;
+        this.id = elemId++;
 
         this.onOpen = typeof options.onOpen === 'function' ? options.onOpen : () => {
         };
@@ -93,9 +83,6 @@ export default class Swiped {
         this.right = options.right;
         this.left = options.left;
 
-        this._elems = [];
-        this.groupCounter = 0;
-        this.elemId = 0;
 
         this.transitionEvent = (() => {
             let t,
@@ -120,19 +107,6 @@ export default class Swiped {
             'transform': CSSPrefix.getName('transform')
         };
 
-        let msPointer = window.navigator.msPointerEnabled;
-
-        this.touch = {
-            start: msPointer ? 'MSPointerDown' : 'touchstart',
-            move: msPointer ? 'MSPointerMove' : 'touchmove',
-            end: msPointer ? 'MSPointerUp' : 'touchend'
-        };
-
-        this.mouse = {
-            start: 'mousedown',
-            move: 'mousemove',
-            end: 'mouseup'
-        };
 
         if (
             (options.right > 0 && options.tolerance > options.right) ||
@@ -142,15 +116,14 @@ export default class Swiped {
         }
     }
 
-    _closeAll = function (groupNumber) {
-        this._elems.forEach(function (Swiped) {
-            if (Swiped.group === groupNumber) {
-                Swiped.close(true);
-            }
-        });
+    onOpen() {
     };
 
-    transitionEnd = (node, cb) => {
+    onClose() {
+    };
+
+
+    transitionEnd(node, cb) {
         let that = this;
 
         let trEnd = () => {
@@ -160,17 +133,9 @@ export default class Swiped {
 
         node.addEventListener(this.transitionEvent, trEnd);
     };
-    /**
-     * swipe.x - initial coordinate Х
-     * swipe.y - initial coordinate Y
-     * swipe.delta - distance
-     * swipe.startSwipe - swipe is starting
-     * swipe.startScroll - scroll is starting
-     * swipe.startTime - necessary for the short swipe
-     * swipe.touchId - ID of the first touch
-     */
 
-    touchStart = (e) => {
+
+    touchStart(e) {
         let touch = e.changedTouches[0];
 
         if (e.touches.length !== 1) {
@@ -185,13 +150,13 @@ export default class Swiped {
         this.resetValue();
 
         if (this.list) {
-            this._closeAll(this.group);
+            _closeAll(this.group);
         } else {
             this.close(true);
         }
     };
 
-    touchMove = function (e) {
+    touchMove(e) {
         let touch = e.changedTouches[0];
 
         // touch of the other finger
@@ -214,7 +179,7 @@ export default class Swiped {
         }
     };
 
-    touchEnd = function (e) {
+    touchEnd(e) {
         if (!this.isValidTouch(e, true) || !this.startSwipe) {
             return;
         }
@@ -233,7 +198,7 @@ export default class Swiped {
     /**
      * Animation of the opening
      */
-    open = function (isForce) {
+    open(isForce?) {
         this.animation(this.dir * this.width);
         this.swiped = true;
 
@@ -247,7 +212,7 @@ export default class Swiped {
     /**
      * Animation of the closing
      */
-    close = function (isForce) {
+    close(isForce?) {
         this.animation(0);
         this.swiped = false;
 
@@ -258,7 +223,7 @@ export default class Swiped {
         this.resetValue();
     };
 
-    toggle = function () {
+    toggle() {
         if (this.swiped) {
             this.close();
         } else {
@@ -269,32 +234,17 @@ export default class Swiped {
     /**
      * reset to initial values
      */
-    resetValue = function() {
+    resetValue() {
         this.startSwipe = false;
         this.startScroll = false;
         this.delta = 0;
     };
 
-    _bindEvents = () => {
-        if (this.eventBinded) {
-            return false;
-        }
-
-        this.delegate(this.touch.move, 'touchMove');
-        this.delegate(this.touch.end, 'touchEnd');
-        this.delegate(this.touch.start, 'touchStart');
-
-        this.delegate(this.mouse.move, 'touchMove');
-        this.delegate(this.mouse.end, 'touchEnd');
-        this.delegate(this.mouse.start, 'touchStart');
-
-        this.eventBinded = true;
-    };
 
     /**
      * detect of the user action: swipe or scroll
      */
-    defineUserAction = function (touch) {
+    defineUserAction(touch) {
         let DELTA_X = 10;
         let DELTA_Y = 10;
 
@@ -309,9 +259,10 @@ export default class Swiped {
      * Which of the touch was a first, if it's a multitouch
      * touchId saved on touchstart
      * @param {object} e - event
+     * @param isTouchEnd
      * @returns {boolean}
      */
-    isValidTouch = (e, isTouchEnd) => {
+    isValidTouch = (e, isTouchEnd?) => {
         // take a targetTouches because need events on this node
         // targetTouches is empty in touchEnd, therefore take a changedTouches
         let touches = isTouchEnd ? 'changedTouches' : 'targetTouches';
@@ -334,7 +285,7 @@ export default class Swiped {
         this.animation(this.delta, 0);
     };
 
-    animation = (x, duration) => {
+    animation = (x, duration?) => {
         duration = duration === undefined ? this.duration : duration;
 
         this.elem.style.cssText = this.cssProps.transition + ':' + this.cssProps.transform + ' ' + duration + 'ms; ' +
@@ -344,9 +295,9 @@ export default class Swiped {
     destroy = (isRemoveNode) => {
         let id = this.id;
 
-        this._elems.forEach(function (elem, i) {
+        _elems.forEach(function (elem, i) {
             if (elem.id === id) {
-                this._elems.splice(i, 1);
+                _elems.splice(i, 1);
             }
         });
 
@@ -355,33 +306,81 @@ export default class Swiped {
         }
     };
 
-    private delegate(event, cbName) {
-        document.addEventListener(event, (e) => {
-            this._elems.forEach(function (Swiped) {
-                let target = e.target;
 
-                while (target) {
-                    if (target === Swiped.elem) {
-                        Swiped[cbName](e);
+}
 
-                        return false;
-                    }
-                    target = target.parentNode;
-                }
-
-                return false;
-            });
-        });
-    }
-
-    private extend(current, options) {
-
-        for (let i in options) {
-            if (options.hasOwnProperty(i)) {
-                current[i] = options[i];
-            }
+function _closeAll(groupNumber) {
+    _elems.forEach(function (Swiped) {
+        if (Swiped.group === groupNumber) {
+            Swiped.close(true);
         }
+    });
+}
 
-        return current;
+function delegate(event, cbName) {
+    document.addEventListener(event, (e) => {
+        _elems.forEach(function (Swiped) {
+            let target = e.target;
+
+            while (target) {
+                if (target === Swiped.elem) {
+                    Swiped[cbName](e);
+
+                    return false;
+                }
+                target = target.parentNode;
+            }
+
+            return false;
+        });
+
+    });
+}
+
+function _bindEvents() {
+    if (eventBinded) {
+        return false;
     }
+
+    delegate(touch.move, 'touchMove');
+    delegate(touch.end, 'touchEnd');
+    delegate(touch.start, 'touchStart');
+
+    delegate(mouse.move, 'touchMove');
+    delegate(mouse.end, 'touchEnd');
+    delegate(mouse.start, 'touchStart');
+
+    eventBinded = true;
+}
+
+
+export function init(options: any): any[] {
+    groupCounter++;
+
+    let elems = [];
+
+    if (options.elems && options.elems.length) {
+        elems = options.elems;
+    } else {
+        elems = document.querySelectorAll(options.query)
+    }
+
+    let group = [];
+
+    delete options.query;
+
+    elems.forEach((elem) => {
+        let option = {...options, elem: elem, group: groupCounter};
+
+        group.push(new SwipedItem(option));
+    });
+
+    _bindEvents();
+    _elems = _elems.concat(group);
+
+    if (group.length === 1) {
+        return group[0];
+    }
+
+    return group;
 }
