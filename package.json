@@ -1,6 +1,6 @@
 {
   "name": "swiped-ts",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "touch swipe for your mobile application, written in vanilla TS (originaly forked from github.com/mishk0/swiped)",
   "main": "./dist/swiped.js",
   "scripts": {
