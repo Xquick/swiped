@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>slider test page</title>
     <script src="swiped-ts.js" type="application/javascript"></script>
-    <script src="https://code.jquery.com/jquery-1.12.4.min.js" type="application/javascript"></script>
     <!--<script src="dist/swiped.js"></script>-->
     <meta name="viewport"
           content="initial-scale=1,user-scalable=no,minimum-scale=1,maximum-scale=1,width=device-width"/>
@@ -115,30 +114,32 @@
     <div class="foo"><span></span>element 16</div>
 </div>
 <script>
-    var a1 = Swiped.init({
+    console.log(SwipedTs);
+    var a1 = SwipedTs.default.Swiped.init({
         query: '.list1 li',
         right: 400,
-        onOpen: function () {
-            this.destroy(true)
+        complete: function () {
+            console.log('complete');
+            this.destroy(true);
         },
-        onClose: function () {
-            console.log('close')
+        canceled: function () {
+            console.log('canceled');
         }
     });
 
-    var a2 = Swiped.init({
+    var a2 = SwipedTs.default.Swiped.init({
         query: '.list2 li',
         left: 200
     });
 
-    var a3 = Swiped.init({
+    var a3 = SwipedTs.default.Swiped.init({
         query: '.list3 li',
         list: true,
         left: 70,
         right: 100
     });
 
-    var a4 = Swiped.init({
+    var a4 = SwipedTs.default.Swiped.init({
         query: '.foo',
         left: 200
     });

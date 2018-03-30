@@ -75,10 +75,10 @@ class SwipedItem {
         this.group = options.group;
         this.id = elemId++;
 
-        this.onOpen = typeof options.onOpen === 'function' ? options.onOpen : () => {
+        this.complete = typeof options.complete === 'function' ? options.complete : () => {
         };
 
-        this.onClose = typeof options.onClose === 'function' ? options.onClose : () => {
+        this.canceled = typeof options.canceled === 'function' ? options.canceled : () => {
         };
 
         this.right = options.right;
@@ -116,10 +116,10 @@ class SwipedItem {
         }
     }
 
-    onOpen() {
+    complete() {
     };
 
-    onClose() {
+    canceled() {
     };
 
     transitionEnd(node, cb) {
@@ -144,7 +144,7 @@ class SwipedItem {
         if (this.list) {
             _closeAll(this.group);
         } else {
-            this.close(true);
+            this.swipeCanceled(true);
         }
     };
 
@@ -172,9 +172,9 @@ class SwipedItem {
 
         // if swipe is more then 150px or time is less then 150ms
         if (this.dir * this.delta > this.tolerance || <any>new Date() - this.startTime < this.time) {
-            this.open();
+            this.swipeComplete();
         } else {
-            this.close();
+            this.swipeCanceled();
         }
 
         e.stopPropagation();
@@ -199,7 +199,7 @@ class SwipedItem {
         if (this.list) {
             _closeAll(this.group);
         } else {
-            this.close(true);
+            this.swipeCanceled(true);
         }
     };
 
@@ -233,9 +233,9 @@ class SwipedItem {
 
         // if swipe is more then 150px or time is less then 150ms
         if (this.dir * this.delta > this.tolerance || <any>new Date() - this.startTime < this.time) {
-            this.open();
+            this.swipeComplete();
         } else {
-            this.close();
+            this.swipeCanceled();
         }
 
         e.stopPropagation();
@@ -245,12 +245,12 @@ class SwipedItem {
     /**
      * Animation of the opening
      */
-    open(isForce?) {
+    swipeComplete(isForce?) {
         this.animation(this.dir * this.width);
         this.swiped = true;
 
         if (!isForce) {
-            this.transitionEnd(this.elem, this.onOpen);
+            this.transitionEnd(this.elem, this.complete);
         }
 
         this.resetValue();
@@ -259,12 +259,12 @@ class SwipedItem {
     /**
      * Animation of the closing
      */
-    close(isForce?) {
+    swipeCanceled(isForce?) {
         this.animation(0);
         this.swiped = false;
 
         if (!isForce) {
-            this.transitionEnd(this.elem, this.onClose);
+            this.transitionEnd(this.elem, this.canceled);
         }
 
         this.resetValue();
@@ -272,9 +272,9 @@ class SwipedItem {
 
     toggle() {
         if (this.swiped) {
-            this.close();
+            this.swipeCanceled();
         } else {
-            this.open();
+            this.swipeComplete();
         }
     };
 
@@ -400,33 +400,35 @@ function _bindEvents() {
 }
 
 
-export function init(options: any): any[] {
-    groupCounter++;
+export const Swiped = {
+    init(options: any): any[] {
+        groupCounter++;
 
-    let elems = [];
+        let elems = [];
 
-    if (options.elems && options.elems.length) {
-        elems = options.elems;
-    } else {
-        elems = document.querySelectorAll(options.query)
+        if (options.elems && options.elems.length) {
+            elems = options.elems;
+        } else {
+            elems = document.querySelectorAll(options.query)
+        }
+
+        let group = [];
+
+        delete options.query;
+
+        elems.forEach((elem) => {
+            let option = {...options, elem: elem, group: groupCounter};
+
+            group.push(new SwipedItem(option));
+        });
+
+        _bindEvents();
+        _elems = _elems.concat(group);
+
+        if (group.length === 1) {
+            return group[0];
+        }
+
+        return group;
     }
-
-    let group = [];
-
-    delete options.query;
-
-    elems.forEach((elem) => {
-        let option = {...options, elem: elem, group: groupCounter};
-
-        group.push(new SwipedItem(option));
-    });
-
-    _bindEvents();
-    _elems = _elems.concat(group);
-
-    if (group.length === 1) {
-        return group[0];
-    }
-
-    return group;
-}
+};

@@ -1,1 +1,3 @@
-export {init} from './swiped-ts'
+import {Swiped} from './swiped-ts';
+
+export default { Swiped };

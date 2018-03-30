@@ -1,5 +1,5 @@
 const path = require('path');
-var libraryName = 'Swiped';
+var libraryName = 'SwipedTs';
 
 console.log('path.resolve(__dirname, \'dist\')', path.resolve(__dirname, 'dist'));
 module.exports = {
