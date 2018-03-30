@@ -1,11 +1,12 @@
 {
   "name": "swiped-ts",
-  "version": "0.1.0",
-  "description": "touch swipe for your mobile application, written in vanilla TS (originaly forked from github.com/mishk0/swiped)",
+  "version": "0.2.0",
+  "description": "touch and mouse swipe for your mobile application, written in TS",
   "main": "./dist/swiped.js",
   "scripts": {
     "test": "./node_modules/karma/bin/karma start",
-    "build": "npx webpack"
+    "build": "npx webpack",
+    "start": "webpack-dev-server"
   },
   "repository": {
     "type": "git",

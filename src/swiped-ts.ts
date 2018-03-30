@@ -49,6 +49,7 @@ class SwipedItem {
     y: any;
     startTime: any;
     swiped: any;
+    isMouseDown: boolean;
     startSwipe: any;
     startScroll: any;
 
@@ -107,7 +108,6 @@ class SwipedItem {
             'transform': CSSPrefix.getName('transform')
         };
 
-
         if (
             (options.right > 0 && options.tolerance > options.right) ||
             (options.left > 0 && options.tolerance > options.left)
@@ -122,7 +122,6 @@ class SwipedItem {
     onClose() {
     };
 
-
     transitionEnd(node, cb) {
         let that = this;
 
@@ -134,6 +133,54 @@ class SwipedItem {
         node.addEventListener(this.transitionEvent, trEnd);
     };
 
+    mousedown(e) {
+        this.x = e.pageX;
+        this.y = e.pageY;
+        this.isMouseDown = true;
+        this.startTime = new Date();
+
+        this.resetValue();
+
+        if (this.list) {
+            _closeAll(this.group);
+        } else {
+            this.close(true);
+        }
+    };
+
+    mousemove(e) {
+        if (this.isMouseDown) {
+            this.delta = e.pageX - this.x;
+
+            this.dir = this.delta < 0 ? -1 : 1;
+            this.width = this.delta < 0 ? this.right : this.left;
+
+            this.defineUserAction(e);
+
+            if (this.startSwipe) {
+                this.move();
+            }
+        }
+    };
+
+    mouseup(e) {
+        this.isMouseDown = false;
+
+        if (!this.startSwipe) {
+            return;
+        }
+
+        // if swipe is more then 150px or time is less then 150ms
+        if (this.dir * this.delta > this.tolerance || <any>new Date() - this.startTime < this.time) {
+            this.open();
+        } else {
+            this.close();
+        }
+
+        e.stopPropagation();
+        this.resetValue();
+        // e.preventDefault();
+    };
 
     touchStart(e) {
         let touch = e.changedTouches[0];
@@ -240,15 +287,14 @@ class SwipedItem {
         this.delta = 0;
     };
 
-
     /**
      * detect of the user action: swipe or scroll
      */
-    defineUserAction(touch) {
+    defineUserAction(e) {
         let DELTA_X = 10;
         let DELTA_Y = 10;
 
-        if (Math.abs(this.y - touch.pageY) > DELTA_Y && !this.startSwipe) {
+        if (Math.abs(this.y - e.pageY) > DELTA_Y && !this.startSwipe) {
             this.startScroll = true;
         } else if (Math.abs(this.delta) > DELTA_X && !this.startScroll) {
             this.startSwipe = true;
@@ -346,9 +392,9 @@ function _bindEvents() {
     delegate(touch.end, 'touchEnd');
     delegate(touch.start, 'touchStart');
 
-    delegate(mouse.move, 'touchMove');
-    delegate(mouse.end, 'touchEnd');
-    delegate(mouse.start, 'touchStart');
+    delegate(mouse.move, 'mousemove');
+    delegate(mouse.end, 'mouseup');
+    delegate(mouse.start, 'mousedown');
 
     eventBinded = true;
 }

@@ -1,6 +1,7 @@
 const path = require('path');
 var libraryName = 'Swiped';
 
+console.log('path.resolve(__dirname, \'dist\')', path.resolve(__dirname, 'dist'));
 module.exports = {
     entry: './src/index.ts',
     module: {
@@ -19,6 +20,7 @@ module.exports = {
     output: {
         filename: 'swiped-ts.js',
         path: path.resolve(__dirname, 'dist'),
+        publicPath: '/',
         library: libraryName,
         libraryTarget: 'umd'
     }
